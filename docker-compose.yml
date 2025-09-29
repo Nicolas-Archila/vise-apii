@@ -1,0 +1,37 @@
+version: "3.9"
+
+services:
+  db:
+    image: postgres:15-alpine
+    container_name: vise_db
+    environment:
+      POSTGRES_USER: vise
+      POSTGRES_PASSWORD: vise
+      POSTGRES_DB: vise
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+  backend:
+    build: ./vise-api
+    container_name: vise_backend
+    environment:
+      PORT: 3000
+      # Preparado por si después conectas a la DB desde la API:
+      DATABASE_URL: postgres://vise:vise@db:5432/vise
+    depends_on:
+      - db
+    ports:
+      - "3000:3000"
+
+  frontend:
+    build: ./frontend
+    container_name: vise_frontend
+    depends_on:
+      - backend
+    ports:
+      - "8080:80"
+
+volumes:
+  db_data:

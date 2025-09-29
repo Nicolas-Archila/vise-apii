@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <title>VISE – Frontend mínimo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    body { font-family: system-ui, Arial, sans-serif; max-width: 880px; margin: 24px auto; }
+    textarea, input, button { font-family: inherit; }
+    textarea { width: 100%; height: 140px; }
+    pre { background:#f6f6f6; padding:12px; border-radius:8px; overflow:auto; }
+    .row { display:flex; gap:16px; flex-wrap:wrap; }
+    .card { flex: 1 1 360px; border:1px solid #ddd; border-radius:12px; padding:16px; }
+  </style>
+</head>
+<body>
+  <h1>VISE – Frontend mínimo</h1>
+  <p>Este frontend llama al backend mediante <code>/api</code> (Nginx proxy → servicio <code>backend:3000</code>).</p>
+
+  <div class="row">
+    <div class="card">
+      <h2>POST /client</h2>
+      <p>Registra un cliente si cumple restricciones.</p>
+      <textarea id="clientPayload">{
+  "name": "John Doe",
+  "country": "USA",
+  "monthlyIncome": 1200,
+  "viseClub": true,
+  "cardType": "Platinum"
+}</textarea>
+      <button onclick="callApi('client', 'clientPayload')">Enviar</button>
+    </div>
+
+    <div class="card">
+      <h2>POST /purchase</h2>
+      <p>Registra una compra y aplica beneficios.</p>
+      <textarea id="purchasePayload">{
+  "clientId": 1,
+  "amount": 250,
+  "currency": "USD",
+  "purchaseDate": "2025-09-20T14:30:00Z",
+  "purchaseCountry": "France"
+}</textarea>
+      <button onclick="callApi('purchase', 'purchasePayload')">Enviar</button>
+    </div>
+  </div>
+
+  <h2>Respuesta</h2>
+  <pre id="out"></pre>
+
+  <script>
+    async function callApi(path, payloadId) {
+      const body = document.getElementById(payloadId).value;
+      const res = await fetch(`/api/${path}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body
+      });
+      const text = await res.text();
+      document.getElementById('out').textContent =
+        `HTTP ${res.status}\n\n` + text;
+    }
+  </script>
+</body>
+</html>

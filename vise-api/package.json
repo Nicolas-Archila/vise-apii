@@ -1,0 +1,14 @@
+{
+  "name": "vise-api",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "docker compose up --build",
+    "down": "docker compose down",
+    "logs": "docker compose logs -f"
+  },
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
