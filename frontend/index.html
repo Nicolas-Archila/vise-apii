@@ -4,31 +4,38 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>VISE – Frontend mejorado</title>
-  <!-- Google font (optional) -->
+  <!-- Importa una tipografía de Google Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
   <style>
+    /* Variables CSS (colores, fondos, radios, tamaños) */
     :root{
-      --bg: #0f1724; /* page background */
+      --bg: #0f1724; /* Fondo general de la página */
       --card: linear-gradient(180deg,#0b1220 0%, #08101a 100%);
-      --muted: #94a3b8;
-      --glass: rgba(255,255,255,0.04);
-      --accent: #6ee7b7;
-      --danger: #fb7185;
-      --radius: 12px;
-      --maxw: 1150px;
+      --muted: #94a3b8; /* Texto atenuado */
+      --glass: rgba(255,255,255,0.04); /* Efecto cristal */
+      --accent: #6ee7b7; /* Color acento */
+      --danger: #fb7185; /* Color de error/peligro */
+      --radius: 12px; /* Bordes redondeados */
+      --maxw: 1150px; /* Ancho máximo */
     }
-    /* Light-mode override (small toggle handled in JS) */
+
+    /* Tema claro, se activa con el botón de "Tema" */
     .light { --bg:#f6f9fc; --card: linear-gradient(180deg,#ffffff,#fbfdff); --muted:#6b7280; --glass: rgba(0,0,0,0.03); --accent:#0ea5a6; }
 
     *{box-sizing:border-box}
     html,body{height:100%;}
     body{
       font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
-      margin:0; padding:28px; background: radial-gradient(1200px 600px at 10% 10%, rgba(14,165,166,0.06), transparent), var(--bg);
-      color: #e6eef6; -webkit-font-smoothing:antialiased; -moz-osx-font-smoothing:grayscale;
+      margin:0; padding:28px;
+      background: radial-gradient(1200px 600px at 10% 10%, rgba(14,165,166,0.06), transparent), var(--bg);
+      color: #e6eef6;
       display:flex; justify-content:center;
     }
+
+    /* Contenedor principal */
     .wrap{width:100%; max-width:var(--maxw);}
+
+    /* Cabecera con logo y botones */
     header{display:flex; align-items:center; gap:16px; margin-bottom:20px}
     .logo{display:flex; align-items:center; gap:12px}
     .logo .mark{width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#06b6d4,#7c3aed); display:grid; place-items:center; font-weight:800}
@@ -39,36 +46,40 @@
     .chip{background:var(--glass); border-radius:999px; padding:8px 12px; font-size:13px; color:var(--muted)}
     .btn{background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; cursor:pointer; color:inherit}
 
+    /* Layout principal: izquierda API, derecha respuesta */
     main{display:grid; grid-template-columns: 1fr 420px; gap:18px}
 
-    /* left column */
+    /* Paneles y tarjetas */
     .panel{background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:0 6px 20px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.02)}
     .cards{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
     .card-title{display:flex; justify-content:space-between; align-items:center; gap:8px}
     label.small{font-size:12px;color:var(--muted);margin-bottom:8px;display:block}
 
+    /* Área de texto para JSON */
     textarea.json{width:100%; min-height:160px; resize:vertical; background:transparent; border:1px dashed rgba(255,255,255,0.04); padding:12px; border-radius:8px; color:inherit; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace}
 
+    /* Controles de botones */
     .controls{display:flex; gap:8px; margin-top:10px}
     .controls button{flex:0;}
 
     .accent{background:linear-gradient(90deg,#06b6d4,#7c3aed); color:#06111b}
     .danger{background:var(--danger); color:white}
 
-    /* right column */
+    /* Columna derecha */
     .right-col{display:flex; flex-direction:column; gap:14px}
     .meta{display:flex; gap:8px; align-items:center; justify-content:space-between}
 
+    /* Área de salida (respuesta API) */
     pre#out{white-space:pre-wrap; overflow:auto; max-height:420px; background:linear-gradient(#011826, #071a24); padding:12px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace}
 
     .small-muted{font-size:12px;color:var(--muted)}
 
     footer{margin-top:18px; font-size:12px; color:var(--muted)}
 
-    /* responsive */
+    /* Responsive: en pantallas pequeñas, todo en una columna */
     @media (max-width:1000px){ main{grid-template-columns:1fr} }
 
-    /* tiny helpers */
+    /* Helpers de utilidad */
     .row{display:flex; gap:8px}
     .flex{display:flex}
     .grow{flex:1}
@@ -79,6 +90,7 @@
 <body>
   <div class="wrap">
     <header>
+      <!-- Logo y título -->
       <div class="logo">
         <div class="mark">V</div>
         <div>
@@ -87,6 +99,7 @@
         </div>
       </div>
 
+      <!-- Controles superiores -->
       <div class="top-controls">
         <div class="chip small-muted">Entorno: <strong id="envLabel">/api</strong></div>
         <button class="btn" id="beautifyBtn" title="Formatear JSON">Formatear JSON</button>
@@ -95,8 +108,10 @@
     </header>
 
     <main>
+      <!-- Panel izquierdo: pruebas de endpoints -->
       <section class="panel">
         <div class="cards">
+          <!-- Endpoint: /client -->
           <div class="card" aria-labelledby="clientTitle">
             <div class="card-title"><strong id="clientTitle">POST /client</strong><span class="small-muted">Registrar cliente</span></div>
             <label class="small" for="clientPayload">Carga JSON</label>
@@ -108,6 +123,7 @@
   "cardType": "Platinum"
 }</textarea>
             <div class="controls">
+              <!-- Botones para enviar, copiar y resetear JSON -->
               <button class="btn accent" onclick="callApi('client','clientPayload', this)">Enviar</button>
               <button class="btn" onclick="copyPayload('clientPayload')">Copiar</button>
               <button class="btn" onclick="resetPayload('clientPayload', 'client')">Reset</button>
@@ -115,6 +131,7 @@
             <div class="small-muted" style="margin-top:8px">Tip: presiona <kbd>Ctrl+Enter</kbd> dentro del textarea para enviar.</div>
           </div>
 
+          <!-- Endpoint: /purchase -->
           <div class="card" aria-labelledby="purchaseTitle">
             <div class="card-title"><strong id="purchaseTitle">POST /purchase</strong><span class="small-muted">Registrar compra</span></div>
             <label class="small" for="purchasePayload">Carga JSON</label>
@@ -134,6 +151,7 @@
           </div>
         </div>
 
+        <!-- Historial de llamadas -->
         <div style="margin-top:14px">
           <div class="card" style="padding:12px">
             <div class="card-title"><strong>Historial de llamadas</strong><button class="btn" onclick="clearHistory()">Borrar</button></div>
@@ -143,6 +161,7 @@
 
       </section>
 
+      <!-- Panel derecho: respuesta de API -->
       <aside class="right-col">
         <div class="panel">
           <div class="meta"><strong>Respuesta</strong><div class="small-muted" id="statusInfo">listo</div></div>
@@ -150,6 +169,7 @@
 
 { "message": "Aquí aparecerá la respuesta..." }</pre>
 
+          <!-- Botones para manejar respuesta -->
           <div style="display:flex; gap:8px; margin-top:10px">
             <button class="btn" onclick="copyResponse()">Copiar respuesta</button>
             <button class="btn" onclick="downloadResponse()">Descargar .json</button>
@@ -171,17 +191,27 @@
   </div>
 
 <script>
-  // small helpers
+  // ========================
+  // Helpers generales
+  // ========================
+
+  // Devuelve fecha/hora en ISO
   function now(){ return new Date().toISOString(); }
+
+  // Muestra año actual en el footer
   document.getElementById('year').textContent = new Date().getFullYear();
 
-  // theme toggle
+  // ========================
+  // Tema oscuro/claro
+  // ========================
   const body = document.body;
   document.getElementById('toggleTheme').addEventListener('click', ()=>{
-    body.classList.toggle('light');
+    body.classList.toggle('light'); // alterna la clase "light"
   });
 
-  // keyboard send: Ctrl+Enter
+  // ========================
+  // Enviar con Ctrl+Enter
+  // ========================
   ['clientPayload','purchasePayload'].forEach(id=>{
     const ta = document.getElementById(id);
     ta.addEventListener('keydown', (ev)=>{
@@ -192,46 +222,72 @@
     });
   });
 
-  // beautify both textareas
+  // ========================
+  // Formatear JSON de payloads
+  // ========================
   document.getElementById('beautifyBtn').addEventListener('click', ()=>{
     ['clientPayload','purchasePayload'].forEach(id=>{
       const ta = document.getElementById(id);
-      try{ ta.value = JSON.stringify(JSON.parse(ta.value), null, 2); } catch(e){ /* ignore invalid */ }
+      try{
+        // Intenta parsear y reimprimir bonito
+        ta.value = JSON.stringify(JSON.parse(ta.value), null, 2);
+      } catch(e){ /* si falla, se ignora */ }
     });
   });
 
-  // copy/restore helpers
-  function copyPayload(id){ navigator.clipboard.writeText(document.getElementById(id).value).then(()=>alert('Copiado al portapapeles')); }
+  // ========================
+  // Copiar / resetear payloads
+  // ========================
+  function copyPayload(id){
+    navigator.clipboard.writeText(document.getElementById(id).value)
+      .then(()=>alert('Copiado al portapapeles'));
+  }
+
+  // Guardamos payloads iniciales para reset
   const initial = {
     client: document.getElementById('clientPayload').value,
     purchase: document.getElementById('purchasePayload').value
   };
   function resetPayload(id, key){ document.getElementById(id).value = initial[key]; }
 
-  // history
+  // ========================
+  // Historial de llamadas
+  // ========================
   function addHistory(entry){
     const hist = document.getElementById('history');
-    const el = document.createElement('div'); el.textContent = entry; hist.prepend(el);
+    const el = document.createElement('div');
+    el.textContent = entry;
+    hist.prepend(el); // añade al inicio
   }
   function clearHistory(){ document.getElementById('history').textContent = ''; }
 
-  // response copy/download
-  function copyResponse(){ navigator.clipboard.writeText(document.getElementById('out').textContent).then(()=>alert('Respuesta copiada')); }
+  // ========================
+  // Copiar / descargar respuesta
+  // ========================
+  function copyResponse(){
+    navigator.clipboard.writeText(document.getElementById('out').textContent)
+      .then(()=>alert('Respuesta copiada'));
+  }
   function downloadResponse(){
     const data = document.getElementById('out').textContent;
     const blob = new Blob([data], {type:'application/json'});
     const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'response.json'; document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    const a = document.createElement('a');
+    a.href = url; a.download = 'response.json';
+    document.body.appendChild(a); a.click(); a.remove();
+    URL.revokeObjectURL(url);
   }
 
-  // main call helper
+  // ========================
+  // Llamadas al backend
+  // ========================
   async function callApi(path, payloadId, btnEl=null){
     const ta = document.getElementById(payloadId);
     const out = document.getElementById('out');
     const statusInfo = document.getElementById('statusInfo');
     const timeEl = document.getElementById('timeMs');
 
-    // parse JSON first
+    // Intentar parsear JSON
     let body;
     try{
       body = JSON.parse(ta.value);
@@ -247,18 +303,24 @@
     if(btnEl) btnEl.disabled = true;
 
     try{
+      // Enviamos POST al backend
       const res = await fetch(`/api/${path}`,{
         method:'POST',
         headers:{'Content-Type':'application/json'},
         body: JSON.stringify(body)
       });
       const text = await res.text();
+
+      // Calculamos tiempo y mostramos respuesta
       const ms = Math.round(performance.now()-start);
       timeEl.textContent = ms;
       out.textContent = `HTTP ${res.status} — ${res.statusText}\nTiempo: ${ms} ms\nFecha: ${now()}\n\n` + formatMaybeJson(text);
       statusInfo.textContent = `Último: ${path} — ${res.status}`;
+
+      // Guardar en historial
       addHistory(`${new Date().toLocaleString()} • ${path} • ${res.status} — ${ms}ms`);
     }catch(e){
+      // Si falla la petición
       const ms = Math.round(performance.now()-start);
       timeEl.textContent = ms;
       out.textContent = 'Error en la petición: ' + e.message;
@@ -269,7 +331,7 @@
     }
   }
 
-  // try to pretty print JSON response when possible
+  // Intenta formatear respuesta como JSON si es válido
   function formatMaybeJson(text){
     try{
       const j = JSON.parse(text);
