@@ -37,13 +37,54 @@ jobs:
           username: ${{ secrets.ACR_NAME_ARCHI }}
           password: ${{ secrets.ACR_PASSWORD_ARCHI }}
 
-      - name: Build and Push to ACR
-        uses: docker/build-push-action@v6
-        with:
-          context: ./vise-api/vise-api
-          file: ./vise-api/vise-api/Dockerfile
-          push: true
-          tags: ${{ env.IMAGE_FULL }}
+      - name: Setup docker buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Detect Dockerfile and context, then build + push
+        run: |
+          set -euo pipefail
+          echo "🔎 Detecting Dockerfile location..."
+          # Lista de candidatos (de más a menos probables)
+          CANDIDATES=(
+            "./vise-api/vise-api/Dockerfile"
+            "./vise-api/Dockerfile"
+            "./Dockerfile"
+            "./app/Dockerfile"
+            "./backend/Dockerfile"
+          )
+
+          DOCKERFILE=""
+          CONTEXT=""
+          for c in "${CANDIDATES[@]}"; do
+            if [ -f "$c" ]; then
+              DOCKERFILE="$c"
+              # context = carpeta donde está el Dockerfile
+              CONTEXT="$(dirname "$c")"
+              break
+            fi
+          done
+
+          if [ -z "$DOCKERFILE" ]; then
+            echo "❌ No Dockerfile encontrado en las rutas probadas:"
+            for c in "${CANDIDATES[@]}"; do echo "  - $c"; done
+            echo "Revisa que el Dockerfile esté commiteado y vuelve a ejecutar."
+            exit 1
+          fi
+
+          echo "✅ Dockerfile encontrado: $DOCKERFILE"
+          echo "✅ Context usado: $CONTEXT"
+
+          # Mostrar las primeras líneas para debug
+          echo "---- head $DOCKERFILE ----"
+          sed -n '1,20p' "$DOCKERFILE" || true
+          echo "--------------------------"
+
+          echo "🔧 Ejecutando docker buildx build --push ..."
+          docker buildx build \
+            --file "$DOCKERFILE" \
+            --tag "${IMAGE_FULL}" \
+            --push \
+            "$CONTEXT"
 
   deploy:
     name: Deploy remote container to Azure
