@@ -43,6 +43,7 @@ jobs:
       - name: Detect Dockerfile and build+push
         run: |
           set -euo pipefail
+          # candidatas (ajusta si quieres)
           CANDIDATES=( "./vise-api/vise-api/Dockerfile" "./vise-api/Dockerfile" "./Dockerfile" )
           DOCKERFILE=""
           CONTEXT=""
@@ -68,15 +69,12 @@ jobs:
     env:
       IMAGE_FULL: ${{ secrets.ACR_NAME_VANE }}.azurecr.io/${{ github.event.inputs.IMAGE_REPOSITORY }}:${{ github.event.inputs.IMAGE_TAG }}
     steps:
-      - name: Azure Login (service principal)
-        uses: azure/login@v1
-        with:
-          creds: ${{ secrets.AZURE_CREDENTIALS }}
-
       - name: Deploy to Azure Web App for Containers
         uses: azure/webapps-deploy@v2
         with:
+          # aquí usamos el input AZURE_WEBAPP_NAME que sí existe
           app-name: ${{ github.event.inputs.AZURE_WEBAPP_NAME }}
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_VANESSA }}
           images: ${{ env.IMAGE_FULL }}
 
   test-deploy:
@@ -96,6 +94,7 @@ jobs:
 
       - name: Test API with hurl
         run: |
+          # Usamos consistentemente AZURE_WEBAPP_NAME (definido en inputs)
           APP_NAME="${{ github.event.inputs.AZURE_WEBAPP_NAME }}"
           PORT="${{ github.event.inputs.PORT }}"
           if [ -z "$APP_NAME" ]; then
@@ -106,6 +105,7 @@ jobs:
             echo "ERROR: session.hurl no encontrado en la raíz del repo."
             exit 1
           fi
+          # Construimos la URL completa (sin punto extra)
           HOST="https://${APP_NAME}.azurewebsites.net:${PORT}"
           echo "Hurl testing host: $HOST"
           hurl --variable host="$HOST" --connect-timeout 20s --error-format long --verbose --test session.hurl
