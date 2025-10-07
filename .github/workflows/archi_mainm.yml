@@ -40,51 +40,27 @@ jobs:
       - name: Setup docker buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Detect Dockerfile and context, then build + push
+      - name: Detect Dockerfile and build+push
         run: |
           set -euo pipefail
-          echo "🔎 Detecting Dockerfile location..."
-          # Lista de candidatos (de más a menos probables)
-          CANDIDATES=(
-            "./vise-api/vise-api/Dockerfile"
-            "./vise-api/Dockerfile"
-            "./Dockerfile"
-            "./app/Dockerfile"
-            "./backend/Dockerfile"
-          )
-
+          # candidatas (ajusta si quieres)
+          CANDIDATES=( "./vise-api/vise-api/Dockerfile" "./vise-api/Dockerfile" "./Dockerfile" )
           DOCKERFILE=""
           CONTEXT=""
           for c in "${CANDIDATES[@]}"; do
             if [ -f "$c" ]; then
               DOCKERFILE="$c"
-              # context = carpeta donde está el Dockerfile
               CONTEXT="$(dirname "$c")"
               break
             fi
           done
-
           if [ -z "$DOCKERFILE" ]; then
-            echo "❌ No Dockerfile encontrado en las rutas probadas:"
-            for c in "${CANDIDATES[@]}"; do echo "  - $c"; done
-            echo "Revisa que el Dockerfile esté commiteado y vuelve a ejecutar."
+            echo "No Dockerfile encontrado en las rutas probadas."
             exit 1
           fi
-
-          echo "✅ Dockerfile encontrado: $DOCKERFILE"
-          echo "✅ Context usado: $CONTEXT"
-
-          # Mostrar las primeras líneas para debug
-          echo "---- head $DOCKERFILE ----"
-          sed -n '1,20p' "$DOCKERFILE" || true
-          echo "--------------------------"
-
-          echo "🔧 Ejecutando docker buildx build --push ..."
-          docker buildx build \
-            --file "$DOCKERFILE" \
-            --tag "${IMAGE_FULL}" \
-            --push \
-            "$CONTEXT"
+          echo "Usando Dockerfile: $DOCKERFILE"
+          echo "Context: $CONTEXT"
+          docker buildx build --file "$DOCKERFILE" --tag "${IMAGE_FULL}" --push "$CONTEXT"
 
   deploy:
     name: Deploy remote container to Azure
@@ -96,7 +72,8 @@ jobs:
       - name: Deploy to Azure Web App for Containers
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ github.event.inputs.AZURE_WEBAPP_NAME_ARCHI }}
+          # aquí usamos el input AZURE_WEBAPP_NAME que sí existe
+          app-name: ${{ github.event.inputs.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_ARCHI }}
           images: ${{ env.IMAGE_FULL }}
 
@@ -117,5 +94,18 @@ jobs:
 
       - name: Test API with hurl
         run: |
-          hurl --variable host=https://${{ github.event.inputs.AZURE_WEBAPP_PUBLISH_ARCHI }}.azurewebsites.net:${{ github.event.inputs.PORT }} \
-               --connect-timeout 20s --error-format long --verbose --test session.hurl
+          # Usamos consistentemente AZURE_WEBAPP_NAME (definido en inputs)
+          APP_NAME="${{ github.event.inputs.AZURE_WEBAPP_NAME }}"
+          PORT="${{ github.event.inputs.PORT }}"
+          if [ -z "$APP_NAME" ]; then
+            echo "ERROR: AZURE_WEBAPP_NAME está vacío. Pasa el nombre del App Service al ejecutar el workflow."
+            exit 1
+          fi
+          if [ ! -f ./session.hurl ]; then
+            echo "ERROR: session.hurl no encontrado en la raíz del repo."
+            exit 1
+          fi
+          # Construimos la URL completa (sin punto extra)
+          HOST="https://${APP_NAME}.azurewebsites.net:${PORT}"
+          echo "Hurl testing host: $HOST"
+          hurl --variable host="$HOST" --connect-timeout 20s --error-format long --verbose --test session.hurl
