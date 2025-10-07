@@ -27,7 +27,7 @@ jobs:
       ACR_HOST: ${{ secrets.ACR_NAME_ARCHI }}.azurecr.io
       IMAGE_FULL: ${{ secrets.ACR_NAME_ARCHI }}.azurecr.io/${{ github.event.inputs.IMAGE_REPOSITORY }}:${{ github.event.inputs.IMAGE_TAG }}
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
 
       - name: Docker Login to ACR
@@ -37,11 +37,30 @@ jobs:
           username: ${{ secrets.ACR_NAME_ARCHI }}
           password: ${{ secrets.ACR_PASSWORD_ARCHI }}
 
+      # Optional debug step (uncomment if you need to verify file locations)
+      - name: Debug: list files (optional)
+        if: ${{ always() }}
+        run: |
+          echo "PWD: $(pwd)"
+          ls -la
+          echo "Root contents:"
+          ls -la .
+          echo "vise-api folder contents:"
+          ls -la vise-api || true
+          echo "vise-api/vise-api folder contents:"
+          ls -la vise-api/vise-api || true
+          if [ -f "vise-api/vise-api/Dockerfile" ]; then
+            echo "Dockerfile found at vise-api/vise-api/Dockerfile"
+            sed -n '1,40p' vise-api/vise-api/Dockerfile || true
+          else
+            echo "Dockerfile NOT FOUND at vise-api/vise-api/Dockerfile"
+          fi
+
       - name: Build and Push to ACR
         uses: docker/build-push-action@v6
         with:
-          context: .
-          file: Dockerfile
+          context: ./vise-api/vise-api
+          file: ./vise-api/vise-api/Dockerfile
           push: true
           tags: ${{ env.IMAGE_FULL }}
 
@@ -55,7 +74,7 @@ jobs:
       - name: Deploy to Azure Web App for Containers
         uses: azure/webapps-deploy@v2
         with:
-          app-name: ${{ github.event.inputs.AZURE_WEBAPP_NAME_ARCHI }}
+          app-name: ${{ github.event.inputs.AZURE_WEBAPP_NAME }}
           publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE_ARCHI }}
           images: ${{ env.IMAGE_FULL }}
 
@@ -76,5 +95,5 @@ jobs:
 
       - name: Test API with hurl
         run: |
-          hurl --variable host=https://${{ github.event.inputs.AZURE_WEBAPP_PUBLISH_ARCHI }}.azurewebsites.net:${{ github.event.inputs.PORT }} \
+          hurl --variable host=https://${{ github.event.inputs.AZURE_WEBAPP_NAME }}.azurewebsites.net:${{ github.event.inputs.PORT }} \
                --connect-timeout 20s --error-format long --verbose --test session.hurl
