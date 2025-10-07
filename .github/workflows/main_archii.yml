@@ -38,15 +38,15 @@ jobs:
           password: ${{ secrets.ACR_PASSWORD_ARCHI }}
 
       # Optional debug step (uncomment if you need to verify file locations)
-      - name: Debug: list files (optional)
-        if: ${{ always() }}
-        run: |
-          echo "PWD: $(pwd)"
-          ls -la
-          echo "Root contents:"
-          ls -la .
-          echo "vise-api folder contents:"
-          ls -la vise-api || true
+      - name: Debug list files (optional)
+  if: ${{ always() }}
+  run: |
+    echo "PWD: $(pwd)"
+    ls -la
+    echo "Root contents:"
+    ls -la
+    echo "vise-api folder contents:"
+    ls -la vise-api || true
           echo "vise-api/vise-api folder contents:"
           ls -la vise-api/vise-api || true
           if [ -f "vise-api/vise-api/Dockerfile" ]; then
