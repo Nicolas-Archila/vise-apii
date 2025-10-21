@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>VISE – Frontend mejorado</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg: #0f1724;
+      --card: linear-gradient(180deg,#0b1220 0%, #08101a 100%);
+      --muted: #94a3b8;
+      --glass: rgba(255,255,255,0.04);
+      --accent: #6ee7b7;
+      --danger: #fb7185;
+      --radius: 12px;
+      --maxw: 1150px;
+    }
+    .light { --bg:#f6f9fc; --card: linear-gradient(180deg,#ffffff,#fbfdff); --muted:#6b7280; --glass: rgba(0,0,0,0.03); --accent:#0ea5a6; }
+
+    *{box-sizing:border-box}
+    html,body{height:100%;}
+    body{
+      font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial;
+      margin:0; padding:28px; background: radial-gradient(1200px 600px at 10% 10%, rgba(14,165,166,0.06), transparent), var(--bg);
+      color: #e6eef6;
+      display:flex; justify-content:center;
+    }
+    .wrap{width:100%; max-width:var(--maxw);}
+    header{display:flex; align-items:center; gap:16px; margin-bottom:20px}
+    .logo{display:flex; align-items:center; gap:12px}
+    .logo .mark{width:44px; height:44px; border-radius:10px; background:linear-gradient(135deg,#06b6d4,#7c3aed); display:grid; place-items:center; font-weight:800}
+    h1{font-size:20px;margin:0}
+    p.lead{margin:2px 0 0; color:var(--muted); font-size:13px}
+
+    .top-controls{margin-left:auto; display:flex; gap:8px; align-items:center}
+    .chip{background:var(--glass); border-radius:999px; padding:8px 12px; font-size:13px; color:var(--muted)}
+    .btn{background:transparent; border:1px solid rgba(255,255,255,0.06); padding:8px 12px; border-radius:10px; cursor:pointer; color:inherit}
+
+    main{display:grid; grid-template-columns: 1fr 420px; gap:18px}
+    .panel{background:var(--card); border-radius:var(--radius); padding:18px; box-shadow:0 6px 20px rgba(2,6,23,0.6); border:1px solid rgba(255,255,255,0.02)}
+    .cards{display:grid; grid-template-columns: 1fr 1fr; gap:14px}
+    .card-title{display:flex; justify-content:space-between; align-items:center; gap:8px}
+    label.small{font-size:12px;color:var(--muted);margin-bottom:8px;display:block}
+    textarea.json{width:100%; min-height:160px; resize:vertical; background:transparent; border:1px dashed rgba(255,255,255,0.04); padding:12px; border-radius:8px; color:inherit; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace}
+    .controls{display:flex; gap:8px; margin-top:10px}
+    .accent{background:linear-gradient(90deg,#06b6d4,#7c3aed); color:#06111b}
+    .danger{background:var(--danger); color:white}
+    .right-col{display:flex; flex-direction:column; gap:14px}
+    pre#out{white-space:pre-wrap; overflow:auto; max-height:420px; background:linear-gradient(#011826, #071a24); padding:12px; border-radius:8px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, monospace}
+    footer{margin-top:18px; font-size:12px; color:var(--muted)}
+    @media (max-width:1000px){ main{grid-template-columns:1fr} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo">
+        <div class="mark">V</div>
+        <div>
+          <h1>VISE — Frontend mejorado</h1>
+          <p class="lead">Cliente de prueba para <code>/</code> — backend:3000</p>
+        </div>
+      </div>
+      <div class="top-controls">
+        <div class="chip small-muted">Entorno: <strong id="envLabel">/</strong></div>
+        <button class="btn" id="beautifyBtn">Formatear JSON</button>
+        <button class="btn" id="toggleTheme">Tema</button>
+      </div>
+    </header>
+
+    <main>
+      <section class="panel">
+        <div class="cards">
+          <div class="card">
+            <div class="card-title"><strong>POST /client</strong><span class="small-muted">Registrar cliente</span></div>
+            <label class="small" for="clientPayload">Carga JSON</label>
+            <textarea id="clientPayload" class="json">{
+  "name": "John Doe",
+  "country": "USA",
+  "monthlyIncome": 2000,
+  "viseClub": true,
+  "cardType": "Platinum"
+}</textarea>
+            <div class="controls">
+              <button class="btn accent" onclick="callApi('client','clientPayload', this)">Enviar</button>
+              <button class="btn" onclick="copyPayload('clientPayload')">Copiar</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-title"><strong>POST /purchase</strong><span class="small-muted">Registrar compra</span></div>
+            <label class="small" for="purchasePayload">Carga JSON</label>
+            <textarea id="purchasePayload" class="json">{
+  "clientId": 1,
+  "amount": 250,
+  "currency": "USD",
+  "purchaseDate": "2025-09-20T14:30:00Z",
+  "purchaseCountry": "France"
+}</textarea>
+            <div class="controls">
+              <button class="btn accent" onclick="callApi('purchase','purchasePayload', this)">Enviar</button>
+              <button class="btn" onclick="copyPayload('purchasePayload')">Copiar</button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <aside class="right-col">
+        <div class="panel">
+          <div><strong>Respuesta</strong></div>
+          <pre id="out">HTTP 200
+
+{ "message": "Aquí aparecerá la respuesta..." }</pre>
+        </div>
+      </aside>
+    </main>
+
+    <footer>
+      <div class="small-muted">VISE • Frontend mínimo — mejorado · &copy; <span id="year"></span></div>
+    </footer>
+  </div>
+
+<script>
+  function now(){ return new Date().toISOString(); }
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  document.getElementById('toggleTheme').addEventListener('click', ()=>document.body.classList.toggle('light'));
+
+  function copyPayload(id){ navigator.clipboard.writeText(document.getElementById(id).value).then(()=>alert('Copiado al portapapeles')); }
+
+  async function callApi(path, payloadId, btnEl=null){
+    const ta = document.getElementById(payloadId);
+    const out = document.getElementById('out');
+    let body;
+    try{ body = JSON.parse(ta.value); }catch(err){ out.textContent = 'JSON inválido: ' + err.message; return; }
+
+    const start = performance.now();
+    if(btnEl) btnEl.disabled = true;
+    try{
+      // 👇 SE CAMBIÓ de "/api/..." a "/..."
+      const res = await fetch(`/${path}`,{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(body)
+      });
+      const text = await res.text();
+      const ms = Math.round(performance.now()-start);
+      out.textContent = `HTTP ${res.status} — ${res.statusText}\nTiempo: ${ms} ms\nFecha: ${now()}\n\n` + text;
+    }catch(e){
+      out.textContent = 'Error en la petición: ' + e.message;
+    }finally{
+      if(btnEl) btnEl.disabled = false;
+    }
+  }
+</script>
+</body>
+</html>
