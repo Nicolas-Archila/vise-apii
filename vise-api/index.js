@@ -1,6 +1,23 @@
+import appInsights from "applicationinsights"; js
+appInsights
+ .setup(process.env.APPLICATIONINSIGHTS_CONNECTION_STRING)
+ .setAutoDependencyCorrelation(true)
+ .setAutoCollectRequests(true)
+ .setAutoCollectPerformance(true)
+ .setAutoCollectExceptions(true)
+ .setAutoCollectDependencies(true)
+ .setAutoCollectConsole(true, true)
+ .setUseDiskRetryCaching(true)
+ .start();
+const client = appInsights.defaultClient;
+client.context.tags[client.context.keys.cloudRole] = "my-node-api"; 
+client.trackEvent({ name: "server_started", properties: { environment:
+"production" } });
+
 const express = require('express');
 const path = require('path');
 const app = express();
+
 
 app.use(express.json());
 
