@@ -1,6 +1,16 @@
 const express = require('express');
+const path = require('path');
 const app = express();
+
 app.use(express.json());
+
+// Servir archivos estáticos del frontend
+app.use(express.static(path.join(__dirname, 'frontend')));
+
+// Ruta raíz: muestra el index.html
+app.get('/', (req, res) => {
+  res.sendFile(path.join(__dirname, 'frontend', 'index.html'));
+});
 
 const PORT = process.env.PORT || 3000;
 
@@ -8,9 +18,9 @@ const PORT = process.env.PORT || 3000;
 let clients = [];
 let nextClientId = 1;
 
-const restrictedCountries = ['China','Vietnam','India','Irán','Iran']; // normalizamos 'Irán' y 'Iran'
+const restrictedCountries = ['China', 'Vietnam', 'India', 'Irán', 'Iran'];
 
-// Util: validar elegibilidad segun tipo de tarjeta
+// Validar elegibilidad según tipo de tarjeta
 function checkEligibility({ monthlyIncome, viseClub, cardType, country }) {
   const type = (cardType || '').toLowerCase();
   if (type === 'classic') return { eligible: true };
@@ -26,8 +36,7 @@ function checkEligibility({ monthlyIncome, viseClub, cardType, country }) {
   if (type === 'black' || type === 'white') {
     if ((monthlyIncome || 0) < 2000) return { eligible: false, reason: 'Ingreso mínimo de 2000 USD requerido para Black/White' };
     if (!viseClub) return { eligible: false, reason: 'El cliente no cumple con la suscripción VISE CLUB requerida para Black/White' };
-    // No puede vivir en los paises restringidos
-    if (restrictedCountries.map(c=>c.toLowerCase()).includes((country||'').toLowerCase())) {
+    if (restrictedCountries.map(c => c.toLowerCase()).includes((country || '').toLowerCase())) {
       return { eligible: false, reason: `Clientes residentes en ${restrictedCountries.join(', ')} no pueden solicitar tarjeta ${cardType}` };
     }
     return { eligible: true };
@@ -66,41 +75,37 @@ app.post('/client', (req, res) => {
   });
 });
 
-// Helper: calcular descuento (reglas según pdf). 
-// Decisión de implementación: si aplican varios beneficios, tomamos **el mayor porcentaje** (no sumarlos).
+// Calcular descuento
 function calculateDiscount(client, purchase) {
   const amount = purchase.amount;
   const purchaseCountry = purchase.purchaseCountry;
   const purchaseDate = new Date(purchase.purchaseDate);
-  // usamos getUTCDay para evitar dependencias de zona horaria local
-  const day = purchaseDate.getUTCDay(); // 0 Domingo ... 6 Sabado
+  const day = purchaseDate.getUTCDay();
   const card = (client.cardType || '').toLowerCase();
 
   const discounts = [];
-
   const abroad = (purchaseCountry || '').toLowerCase() !== (client.country || '').toLowerCase();
 
   if (card === 'gold') {
-    if ([1,2,3].includes(day) && amount > 100) discounts.push(15);
+    if ([1, 2, 3].includes(day) && amount > 100) discounts.push(15);
   }
   if (card === 'platinum') {
-    if ([1,2,3].includes(day) && amount > 100) discounts.push(20);
-    if (day === 6 && amount > 200) discounts.push(30); // sábado
+    if ([1, 2, 3].includes(day) && amount > 100) discounts.push(20);
+    if (day === 6 && amount > 200) discounts.push(30);
     if (abroad) discounts.push(5);
   }
   if (card === 'black') {
-    if ([1,2,3].includes(day) && amount > 100) discounts.push(25);
+    if ([1, 2, 3].includes(day) && amount > 100) discounts.push(25);
     if (day === 6 && amount > 200) discounts.push(35);
     if (abroad) discounts.push(5);
   }
   if (card === 'white') {
-    if ([1,2,3,4,5].includes(day) && amount > 100) discounts.push(25); // lunes a viernes
-    if ([6,0].includes(day) && amount > 200) discounts.push(35); // sabado/domingo
+    if ([1, 2, 3, 4, 5].includes(day) && amount > 100) discounts.push(25);
+    if ([6, 0].includes(day) && amount > 200) discounts.push(35);
     if (abroad) discounts.push(5);
   }
 
-  const maxDisc = discounts.length ? Math.max(...discounts) : 0;
-  return maxDisc;
+  return discounts.length ? Math.max(...discounts) : 0;
 }
 
 // POST /purchase
@@ -113,9 +118,8 @@ app.post('/purchase', (req, res) => {
   const client = clients.find(c => c.clientId === clientId);
   if (!client) return res.status(404).json({ status: 'Rejected', error: 'Cliente no registrado' });
 
-  // Reglas extra: si el cliente tiene Black/White y la compra se origina en país restringido -> rechazar (según ejemplo del enunciado).
-  if (['black','white'].includes((client.cardType||'').toLowerCase())) {
-    if (restrictedCountries.map(c=>c.toLowerCase()).includes((purchaseCountry||'').toLowerCase())) {
+  if (['black', 'white'].includes((client.cardType || '').toLowerCase())) {
+    if (restrictedCountries.map(c => c.toLowerCase()).includes((purchaseCountry || '').toLowerCase())) {
       return res.status(403).json({ status: 'Rejected', error: `El cliente con tarjeta ${client.cardType} no puede realizar compras desde ${purchaseCountry}` });
     }
   }
@@ -124,34 +128,21 @@ app.post('/purchase', (req, res) => {
   const discountApplied = Math.round((amount * discountPercent / 100) * 100) / 100;
   const finalAmount = Math.round((amount - discountApplied) * 100) / 100;
 
-  if (discountPercent > 0) {
-    return res.json({
-      status: 'Approved',
-      purchase: {
-        clientId,
-        originalAmount: amount,
-        discountApplied,
-        finalAmount,
-        benefit: `Descuento ${discountPercent}%`
-      }
-    });
-  } else {
-    return res.json({
-      status: 'Approved',
-      purchase: {
-        clientId,
-        originalAmount: amount,
-        discountApplied: 0,
-        finalAmount: finalAmount,
-        benefit: 'Sin beneficio aplicable'
-      }
-    });
-  }
+  return res.json({
+    status: 'Approved',
+    purchase: {
+      clientId,
+      originalAmount: amount,
+      discountApplied,
+      finalAmount,
+      benefit: discountPercent > 0 ? `Descuento ${discountPercent}%` : 'Sin beneficio aplicable'
+    }
+  });
 });
 
-// Endpoint utilitario para listar clientes (solo para pruebas)
+// Listar clientes (solo para pruebas)
 app.get('/clients', (req, res) => {
   res.json(clients);
 });
 
-app.listen(PORT, () => console.log(`VISE API corriendo en http://localhost:${PORT}`));
+app.listen(PORT, () => console.log(`VISE App disponible en http://localhost:${PORT}`));
